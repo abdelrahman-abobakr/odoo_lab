@@ -1,0 +1,239 @@
+
+<odoo>
+    
+    <record id="view_partner_form_inherit_hms_enhanced" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.hms.enhanced</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+           
+            <xpath expr="//field[@name='category_id']" position="before">
+                <field name="vat" string="Tax ID" required="1" 
+                       help="Tax identification number (mandatory for all customers)"/>
+            </xpath>
+            
+           
+            <xpath expr="//group[@name='misc']" position="after">
+                <group string="HMS Integration" name="hms_integration">
+                    <field name="related_patient_id" 
+                           string="Related Patient" 
+                           domain="[]"
+                           context="{'default_email': email}"
+                           options="{'no_create_edit': True}"
+                           help="Link this customer to a patient record"/>
+                </group>
+            </xpath>
+            
+            
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <div class="alert alert-info" role="alert" 
+                         invisible="not related_patient_id">
+                        <i class="fa fa-user-md"/> 
+                        This customer is linked to patient: 
+                        <field name="related_patient_id" readonly="1" 
+                               options="{'no_open': True}"/>
+                    </div>
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_list_inherit_hms_enhanced" model="ir.ui.view">
+        <field name="name">res.partner.list.inherit.hms.enhanced</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            
+            <field name="email" position="after">
+                <field name="website" widget="url" optional="show"/>
+            </field>
+            
+            
+            <field name="phone" position="after">
+                <field name="vat" string="Tax ID" optional="show"/>
+            </field>
+            
+            
+            <field name="vat" position="after">
+                <field name="related_patient_id" string="Related Patient" 
+                       optional="hide" widget="many2one_avatar_user"/>
+            </field>
+            
+            
+            <list position="attributes">
+                <attribute name="decoration-info">related_patient_id</attribute>
+                <attribute name="decoration-muted">not active</attribute>
+            </list>
+        </field>
+    </record>
+
+    
+    <record id="action_partner_customer_hms" model="ir.actions.act_window">
+        <field name="name">Customers (HMS Enhanced)</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_company', '=', False)]</field>
+        <field name="context">{
+            'default_is_company': False
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new customer
+            </p>
+            <p>
+                Customers are contacts with whom you do business.<br/>
+                You can link customers to HMS patients for integrated management.
+            </p>
+        </field>
+    </record>
+
+    
+    <record id="action_partner_customer_hms_alt" model="ir.actions.act_window">
+        <field name="name">Customers (HMS Enhanced - Alternative)</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_company', '=', False)]</field>
+        <field name="context">{
+            'default_is_company': False
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new customer
+            </p>
+            <p>
+                Customers are contacts with whom you do business.<br/>
+                You can link customers to HMS patients for integrated management.
+            </p>
+        </field>
+    </record>
+
+   
+    <record id="action_partner_patient_linked" model="ir.actions.act_window">
+        <field name="name">Patient-Linked Customers</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('related_patient_id', '!=', False)]</field>
+        <field name="context">{
+            'search_default_has_patient': 1
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No customer-patient links found
+            </p>
+            <p>
+                This view shows customers that are linked to HMS patients.<br/>
+                Link customers to patients to enable integrated management.
+            </p>
+        </field>
+    </record>
+
+    
+    <record id="view_partner_hms_integration_pivot" model="ir.ui.view">
+        <field name="name">res.partner.hms.integration.pivot</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <pivot string="Customer-Patient Integration Report">
+                <field name="country_id" type="row"/>
+                <field name="related_patient_id" type="row"/>
+                <field name="create_date" interval="month" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    
+    <record id="view_partner_hms_integration_graph" model="ir.ui.view">
+        <field name="name">res.partner.hms.integration.graph</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <graph string="Customer-Patient Integration Analysis" type="pie">
+                <field name="related_patient_id"/>
+            </graph>
+        </field>
+    </record>
+
+    
+    <record id="view_partner_search_hms" model="ir.ui.view">
+        <field name="name">res.partner.search.hms</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <search position="inside">
+                <filter name="has_patient" string="Has Patient Link" 
+                        domain="[('related_patient_id', '!=', False)]"/>
+                <filter name="no_patient" string="No Patient Link" 
+                        domain="[('related_patient_id', '=', False)]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter name="group_by_patient" string="Related Patient" 
+                            context="{'group_by': 'related_patient_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    
+    <menuitem id="menu_hms_crm_integration" 
+              name="CRM Integration" 
+              parent="hms_root_menu" 
+              sequence="50"/>
+              
+    <menuitem id="menu_hms_customers" 
+              name="HMS Customers" 
+              parent="menu_hms_crm_integration" 
+              action="action_partner_customer_hms" 
+              sequence="10"/>
+              
+    <menuitem id="menu_hms_patient_customers" 
+              name="Patient-Linked Customers" 
+              parent="menu_hms_crm_integration" 
+              action="action_partner_patient_linked" 
+              sequence="20"/>
+
+    
+    <record id="view_partner_quick_create_hms" model="ir.ui.view">
+        <field name="name">res.partner.quick.create.hms</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form string="Quick Create Customer">
+                <group>
+                    <field name="name" required="1"/>
+                    <field name="email" widget="email"/>
+                    <field name="phone"/>
+                    <field name="vat" string="Tax ID" required="1"/>
+                    <field name="related_patient_id" 
+                           context="{'default_email': email}"
+                           options="{'no_create_edit': True}"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    
+    <record id="view_customer_patient_link_wizard" model="ir.ui.view">
+        <field name="name">customer.patient.link.wizard</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form string="Link Customer to Patient">
+                <group>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Link Customer to Patient</strong><br/>
+                        Select a patient to link with this customer. 
+                        Email addresses should match for proper integration.
+                    </div>
+                    <field name="name" readonly="1"/>
+                    <field name="email" readonly="1"/>
+                    <field name="related_patient_id" 
+                           domain="[('email', '=', email)]"
+                           context="{'default_email': email}"
+                           required="1"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    
+</odoo>
